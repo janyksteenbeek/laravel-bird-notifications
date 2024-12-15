@@ -21,12 +21,12 @@
     },
     "autoload": {
         "psr-4": {
-            "NotificationChannels\\Messagebird\\": "Bird"
+            "NotificationChannels\\Bird\\": "Bird"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "NotificationChannels\\Messagebird\\Test\\": "tests"
+            "NotificationChannels\\Bird\\Test\\": "tests"
         }
     },
     "scripts": {
@@ -39,7 +39,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "NotificationChannels\\Messagebird\\MessagebirdServiceProvider"
+                "NotificationChannels\\Bird\\BirdServiceProvider"
             ]
         }
     }
