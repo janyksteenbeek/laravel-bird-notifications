@@ -1,88 +1,52 @@
-# Bird notifications channel for Laravel
+# Laravel Bird Notification Channel
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/laravel-notification-channels/messagebird.svg?style=flat-square)](https://packagist.org/packages/laravel-notification-channels/messagebird)
-[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Build Status](https://img.shields.io/travis/laravel-notification-channels/messagebird/master.svg?style=flat-square)](https://travis-ci.org/laravel-notification-channels/messagebird)
-[![StyleCI](https://styleci.io/repos/65683649/shield)](https://styleci.io/repos/65683649)
-[![SensioLabsInsight](https://img.shields.io/sensiolabs/i/357bb8d3-2163-45be-97f2-ce71434a4379.svg?style=flat-square)](https://insight.sensiolabs.com/projects/357bb8d3-2163-45be-97f2-ce71434a4379)
-[![Quality Score](https://img.shields.io/scrutinizer/g/laravel-notification-channels/messagebird.svg?style=flat-square)](https://scrutinizer-ci.com/g/laravel-notification-channels/messagebird)
-[![Code Coverage](https://img.shields.io/scrutinizer/coverage/g/laravel-notification-channels/messagebird/master.svg?style=flat-square)](https://scrutinizer-ci.com/g/laravel-notification-channels/messagebird/?branch=master)
-[![Total Downloads](https://img.shields.io/packagist/dt/laravel-notification-channels/messagebird.svg?style=flat-square)](https://packagist.org/packages/laravel-notification-channels/messagebird)
-
-This package makes it easy to send [Bird SMS notifications](https://bird.com) with Laravel.
-
-## Contents
-
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Setting up your Bird account](#setting-up-your-bird-account)
-- [Usage](#usage)
-- [Dynamic Configuration](#dynamic-configuration)
-- [Changelog](#changelog)
-- [Testing](#testing)
-- [Security](#security)
-- [Contributing](#contributing)
-- [Credits](#credits)
-- [License](#license)
-
-## Requirements
-
-- [Sign up](https://bird.com/signup) for a free Bird account
-- Create a new access key in the developers section
-- Set up a workspace and channel in your Bird account
+This package provides a Laravel notification channel for sending SMS messages using the Bird API.
 
 ## Installation
 
-You can install the package via composer:
+You can install this package via Composer:
 
-``` bash
-composer require laravel-notification-channels/bird
+```bash
+composer require janyksteenbeek/laravel-bird-notifications
 ```
 
-For Laravel 5.4 or lower, you must add the service provider to your config:
+## Configuration
 
-```php
-// config/app.php
-'providers' => [
-    ...
-    NotificationChannels\Bird\BirdServiceProvider::class,
-],
-```
+1. Add your Bird credentials to your `.env` file:
 
-## Setting up your Bird account
-
-Add the environment variables to your `config/services.php`:
-
-```php
-// config/services.php
-...
-'bird' => [
-    'access_key' => env('BIRD_ACCESS_KEY'),
-    'workspace' => env('BIRD_WORKSPACE_ID'),
-    'channel' => env('BIRD_CHANNEL_ID'),
-],
-...
-```
-
-Add your Bird Access Key, Workspace ID, and Channel ID to your `.env`:
-
-```php
-// .env
+```env
 BIRD_ACCESS_KEY=your_access_key
 BIRD_WORKSPACE_ID=your_workspace_id
 BIRD_CHANNEL_ID=your_channel_id
 ```
 
+2. Add the configuration to `config/services.php`:
+
+```php
+'bird' => [
+    'access_key' => env('BIRD_ACCESS_KEY'),
+    'workspace' => env('BIRD_WORKSPACE_ID'),
+    'channel' => env('BIRD_CHANNEL_ID'),
+],
+```
+
 ## Usage
 
-Now you can use the channel in your `via()` method inside the notification:
+### Basic Usage
 
-``` php
-use NotificationChannels\Bird\BirdChannel;
+First, create a notification class using Laravel's notification command:
+
+```bash
+php artisan make:notification OrderConfirmation
+```
+
+Then, implement the `toBird` method in your notification class:
+
+```php
 use NotificationChannels\Bird\BirdMessage;
-use Illuminate\Notifications\Notification;
+use NotificationChannels\Bird\BirdChannel;
 
-class VpsServerOrdered extends Notification
+class OrderConfirmation extends Notification
 {
     public function via($notifiable)
     {
@@ -91,86 +55,97 @@ class VpsServerOrdered extends Notification
 
     public function toBird($notifiable)
     {
-        return (new BirdMessage("Your {$notifiable->service} was ordered!"));
+        return (new BirdMessage())
+            ->setBody("Your order #{$this->order->id} has been confirmed!")
+            ->setRecipients($notifiable->phone_number);
     }
 }
 ```
 
-Additionally you can add recipients (single value or array):
+### Using BirdRoute for Dynamic Configuration
 
-``` php
-return (new BirdMessage("Your {$notifiable->service} was ordered!"))->setRecipients($recipients);
-```
+BirdRoute allows you to customize the Bird configuration per notification. This is useful when you need to:
+- Send to multiple recipients
+- Use different access tokens
+- Use different workspaces
+- Use different channels
 
-### Using BirdRoute
-
-You can use `BirdRoute` to specify custom recipients, access token, workspace, and channel for a specific notification:
+#### Method 1: Using BirdRoute in the Notifiable Model
 
 ```php
 use NotificationChannels\Bird\BirdRoute;
 
-public function routeNotificationForBird()
+class User extends Authenticatable
 {
-    return BirdRoute::make(
-        recipients: ['+31612345678', '+31687654321'],
-        token: 'custom-access-token',        // optional
-        workspace: 'custom-workspace-id',     // optional
-        channel: 'custom-channel-id'         // optional
-    );
+    public function routeNotificationForBird($notification)
+    {
+        return BirdRoute::make(
+            recipients: [$this->phone_number],
+            token: 'custom-access-token',        // optional
+            workspace: 'custom-workspace-id',     // optional
+            channel: 'custom-channel-id'         // optional
+        );
+    }
 }
 ```
 
-This allows you to:
-- Send to multiple recipients
-- Use a different access token than your default configuration
-- Use a different workspace ID than your default configuration
-- Use a different channel ID than your default configuration
-
-### Using Routes
-
-You can also use Laravel's Route facade to send notifications to specific numbers:
-
-```php
-use Illuminate\Support\Facades\Route;
-
-Route::notification('+31612345678', new VpsServerOrdered($vps));
-```
-
-This allows you to quickly send a notification to a specific phone number without creating a notifiable entity.
-
-## Dynamic Configuration
-
-You can set the access token dynamically at runtime:
+#### Method 2: Using BirdRoute in the Notification
 
 ```php
 use NotificationChannels\Bird\BirdMessage;
+use NotificationChannels\Bird\BirdRoute;
 
-$message = (new BirdMessage("Your order was processed!"))
-    ->setAccessToken('your-dynamic-access-key');
+class OrderConfirmation extends Notification
+{
+    public function toBird($notifiable)
+    {
+        // Create a BirdRoute instance
+        $route = BirdRoute::make(
+            recipients: ['+31612345678', '+31687654321'],
+            workspace: 'special-workspace-id',
+            channel: 'urgent-channel-id'
+        );
+
+        // Create your message
+        $message = (new BirdMessage())
+            ->setBody("Your order #{$this->order->id} has been confirmed!");
+
+        // Apply the route configuration
+        if ($route->token) {
+            $message->setAccessToken($route->token);
+        }
+        $message->setRecipients($route->recipients);
+
+        return $message;
+    }
+}
 ```
 
-## Changelog
+### Sending to Multiple Recipients
 
-Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
-
-## Testing
-
-``` bash
-$ composer test
+```php
+public function toBird($notifiable)
+{
+    return (new BirdMessage())
+        ->setBody('Your order has been confirmed!')
+        ->setRecipients([
+            '+31612345678',
+            '+31687654321'
+        ]);
+}
 ```
+
 
 ## Security
 
-If you discover any security related issues, please email security@example.com instead of using the issue tracker.
-
-## Contributing
-
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+If you discover any security-related issues, please email security@example.com instead of using the issue tracker.
 
 ## Credits
 
 - [All Contributors](../../contributors)
 
+Special thanks to https://github.com/laravel-notification-channels/messagebird for providing a good base.
+
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](LICENSE.md) for more information. 
