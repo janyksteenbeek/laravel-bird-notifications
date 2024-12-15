@@ -1,0 +1,46 @@
+{
+    "name": "janyksteenbeek/laravel-bird-notifications",
+    "description": "Bird notification channel for Laravel",
+    "homepage": "https://github.com/janyksteenbeek/laravel-bird-notifications",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Janyk Steenbeek",
+            "email": "me@janyk.dev",
+            "homepage": "https://janyk.dev",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "illuminate/notifications": "^9.0|^10.0|^11.0",
+        "illuminate/support": "^9.0|^10.0|^11.0",
+        "illuminate/queue": "^9.0|^10.0|^11.0",
+        "guzzlehttp/guzzle": "^7.2",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "NotificationChannels\\Messagebird\\": "Bird"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NotificationChannels\\Messagebird\\Test\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "NotificationChannels\\Messagebird\\MessagebirdServiceProvider"
+            ]
+        }
+    }
+}
