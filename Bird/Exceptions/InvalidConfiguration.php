@@ -11,6 +11,6 @@ class InvalidConfiguration extends Exception
      */
     public static function configurationNotSet()
     {
-        return new static('In order to send notification via Bird you need to add credentials in the `messagebird` key of `config.services`.');
+        return new static('In order to send notification via Bird you need to add credentials in the `bird` key of `config.services`.');
     }
 }
