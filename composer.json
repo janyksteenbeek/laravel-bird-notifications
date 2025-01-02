@@ -24,14 +24,6 @@
             "NotificationChannels\\Bird\\": "Bird"
         }
     },
-    "autoload-dev": {
-        "psr-4": {
-            "NotificationChannels\\Bird\\Test\\": "tests"
-        }
-    },
-    "scripts": {
-        "test": "vendor/bin/phpunit"
-    },
     "config": {
         "sort-packages": true
     },
